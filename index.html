@@ -1,0 +1,190 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plataforma de Estudio Médico</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0; /* Ensure no default margin */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            height: 50vh; /* Taller on mobile for vertical list */
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 450px;
+            }
+        }
+        .accordion-content {
+            transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+            max-height: 0;
+            overflow: hidden;
+        }
+        .accordion-content.open {
+            max-height: 1000px; /* Adjusted for potentially longer content */
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
+        .nav-item.active {
+            background-color: #0284c7; /* sky-600 */
+            color: white;
+        }
+        .subject-button.active {
+            background-color: #0ea5e9; /* sky-500 */
+            color: white;
+            font-weight: 600;
+        }
+        #progress-checklist::-webkit-scrollbar,
+        #cq-progress-checklist::-webkit-scrollbar { /* Apply to both progress checklists */
+            width: 6px;
+        }
+        #progress-checklist::-webkit-scrollbar-track,
+        #cq-progress-checklist::-webkit-scrollbar-track {
+            background: #f1f5f9; /* slate-100 */
+        }
+        #progress-checklist::-webkit-scrollbar-thumb,
+        #cq-progress-checklist::-webkit-scrollbar-thumb {
+            background: #cbd5e1; /* slate-300 */
+            border-radius: 3px;
+        }
+        :focus-visible {
+            outline: 3px solid #38bdf8; /* sky-400 */
+            outline-offset: 1px;
+        }
+        .year-button {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+    </style>
+    <script type="importmap">
+    {
+      "imports": {
+        "@google/genai": "https://esm.sh/@google/genai@^0.7.0",
+        "react/": "https://esm.sh/react@^19.1.0/"
+      }
+    }
+    </script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+    <div id="app-root">
+
+        <!-- Landing View -->
+        <div id="landing-view" class="min-h-screen flex flex-col items-center justify-center p-4 text-center bg-gradient-to-br from-sky-50 to-indigo-100">
+            <header class="mb-10 md:mb-12">
+                <h1 class="text-4xl sm:text-5xl font-bold text-sky-700 mb-3">Plataforma de Estudio Médico</h1>
+                <p class="text-lg sm:text-xl text-slate-600">Selecciona tu año de cursada para comenzar.</p>
+            </header>
+            <nav id="year-navigation" class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 w-full max-w-2xl">
+                <button data-year="4" class="year-button bg-sky-600 hover:bg-sky-700 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-150 transform hover:scale-105 focus:ring-4 focus:ring-sky-300">4to Año</button>
+                <button data-year="5" class="year-button bg-sky-600 hover:bg-sky-700 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-150 transform hover:scale-105 focus:ring-4 focus:ring-sky-300">5to Año</button>
+                <button data-year="6" class="year-button bg-teal-600 hover:bg-teal-700 text-white font-semibold py-4 px-6 rounded-lg transition-all duration-150 transform hover:scale-105 focus:ring-4 focus:ring-teal-300">6to Año</button>
+            </nav>
+            <div id="year-placeholder-message" class="mt-8 text-slate-500 h-6" aria-live="polite"></div>
+        </div>
+
+        <!-- Sixth Year View -->
+        <div id="sixth-year-view" class="hidden flex flex-col min-h-screen">
+            <header class="bg-slate-800 text-white p-3 shadow-md flex items-center justify-between sticky top-0 z-50">
+                <h1 class="text-xl md:text-2xl font-bold">6to Año</h1>
+                <button id="back-to-landing-button" class="text-sm bg-sky-600 hover:bg-sky-700 py-2 px-3 rounded-md transition-colors duration-150 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-1">
+                      <path fill-rule="evenodd" d="M17 10a.75.75 0 0 1-.75.75H5.56l2.72 2.72a.75.75 0 1 1-1.06 1.06l-4-4a.75.75 0 0 1 0-1.06l4-4a.75.75 0 0 1 1.06 1.06L5.56 9.25H16.25A.75.75 0 0 1 17 10Z" clip-rule="evenodd" />
+                    </svg>
+                    Años
+                </button>
+            </header>
+
+            <nav id="sixth-year-subject-navigation" class="bg-slate-100 p-2 sm:p-3 flex justify-center space-x-2 sm:space-x-4 border-b border-slate-300 shadow-sm sticky top-[60px] md:top-[68px] z-40">
+                <button data-subject="patologias_quirurgicas" class="subject-button py-2 px-3 sm:px-4 rounded-md font-medium text-slate-700 hover:bg-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 transition-colors duration-150">Patologías Quirúrgicas</button>
+                <button data-subject="clinica_quirurgica" class="subject-button py-2 px-3 sm:px-4 rounded-md font-medium text-slate-700 hover:bg-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 transition-colors duration-150">Clínica Quirúrgica</button>
+            </nav>
+
+            <div id="subject-content-area" class="flex-grow">
+                <!-- Patologías Quirúrgicas Module -->
+                <div id="patologias-quirurgicas-module" class="subject-module hidden">
+                    <div class="md:flex md:min-h-[calc(100vh-120px)]"> <!-- Adjusted min-height for sticky headers -->
+                        <aside class="w-full md:w-72 bg-white shadow-lg md:shadow-none flex-shrink-0 flex flex-col md:border-r border-slate-200">
+                            <div class="p-4 border-b">
+                                <h2 class="text-xl font-bold text-slate-900">Patologías Quirúrgicas</h2>
+                                <p class="text-sm text-slate-500">Resumen Interactivo</p>
+                            </div>
+                            <div class="p-2 md:hidden border-b">
+                                <button id="mobile-menu-toggle" class="w-full bg-slate-100 text-slate-800 font-semibold p-3 rounded-md flex justify-between items-center" aria-expanded="false" aria-controls="pathology-nav">
+                                    <span>Seleccionar Patología</span>
+                                    <span id="menu-arrow" class="transform transition-transform">▼</span>
+                                </button>
+                            </div>
+                            <nav id="pathology-nav" class="p-2 md:block md:overflow-y-auto hidden flex-grow" aria-label="Navegación de patologías"></nav>
+                            <div id="progress-tracker" class="p-4 border-t mt-auto"></div>
+                        </aside>
+                        <main class="flex-1 p-4 md:p-8 overflow-y-auto">
+                            <div id="main-content-patologias">
+                                <div id="welcome-view-patologias">
+                                    <h3 class="text-2xl md:text-3xl font-bold mb-2 text-slate-900">Bienvenido al Módulo de Patologías</h3>
+                                    <p class="text-slate-600 mb-6">Seleccione una patología del menú para ver los detalles, o explore el gráfico comparativo de mortalidad.</p>
+                                    <div class="bg-white p-4 md:p-6 rounded-lg shadow-sm">
+                                        <h4 class="text-lg md:text-xl font-semibold mb-4 text-slate-800" id="chart-heading-patologias">Comparativa de Mortalidad Estimada</h4>
+                                        <p class="text-sm text-slate-500 mb-4">Este gráfico muestra una estimación de la tasa de mortalidad potencial para cada condición en sus formas complicadas.</p>
+                                        <div class="chart-container">
+                                            <canvas id="mortalityChart" role="img" aria-labelledby="chart-heading-patologias"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="pathology-details" class="hidden"></div>
+                            </div>
+                        </main>
+                    </div>
+                </div>
+
+                <!-- Clínica Quirúrgica Module -->
+                <div id="clinica-quirurgica-module" class="subject-module hidden">
+                     <div class="md:flex md:min-h-[calc(100vh-120px)]"> <!-- Adjusted min-height -->
+                        <aside class="w-full md:w-72 bg-white shadow-lg md:shadow-none flex-shrink-0 flex flex-col md:border-r border-slate-200">
+                            <div class="p-4 border-b">
+                                <h2 class="text-xl font-bold text-slate-900">Clínica Quirúrgica</h2>
+                                <p class="text-sm text-slate-500">Temas Fundamentales</p>
+                            </div>
+                            <div class="p-2 md:hidden border-b">
+                                <button id="cq-mobile-menu-toggle" class="w-full bg-slate-100 text-slate-800 font-semibold p-3 rounded-md flex justify-between items-center" aria-expanded="false" aria-controls="cq-nav">
+                                    <span>Seleccionar Tema</span>
+                                    <span id="cq-menu-arrow" class="transform transition-transform">▼</span>
+                                </button>
+                            </div>
+                            <nav id="cq-nav" class="p-2 md:block md:overflow-y-auto hidden flex-grow" aria-label="Navegación de temas de clínica quirúrgica"></nav>
+                            <div id="cq-progress-tracker" class="p-4 border-t mt-auto"></div>
+                        </aside>
+                        <main class="flex-1 p-4 md:p-8 overflow-y-auto">
+                            <div id="cq-main-content">
+                                <div id="cq-welcome-view">
+                                    <h3 class="text-2xl md:text-3xl font-bold mb-2 text-slate-900">Bienvenido a Clínica Quirúrgica</h3>
+                                    <p class="text-slate-600 mb-6">Seleccione un tema del menú para ver los detalles.</p>
+                                    <!-- Placeholder for potential chart or other content -->
+                                     <div class="bg-white p-4 md:p-6 rounded-lg shadow-sm">
+                                        <h4 class="text-lg md:text-xl font-semibold mb-4 text-slate-800">Contenido Principal</h4>
+                                        <p class="text-slate-500">Información sobre los temas de clínica quirúrgica aparecerá aquí.</p>
+                                    </div>
+                                </div>
+                                <div id="cq-details" class="hidden"></div>
+                            </div>
+                        </main>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="./index.js"></script>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
